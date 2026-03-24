@@ -78,7 +78,7 @@ func newRootCommand(stdout io.Writer, stderr io.Writer, exitCode *int) *cobra.Co
 	cmd.Flags().StringVar(&manifestPath, "manifest", defaultManifestFile, "Path to the manifest JSON file")
 	cmd.Flags().StringVar(&lockPath, "lock", defaultLockFile, "Path to the lockfile JSON file")
 	cmd.Flags().StringVar(&workDir, "workdir", ".", "Working directory for git collection")
-	cmd.Flags().BoolVar(&writeLock, "write-lock", false, "Write a new lockfile when the lockfile is missing")
+	cmd.Flags().BoolVar(&writeLock, "write-lock", false, "Generate a new lockfile from the manifest, overwriting any existing lockfile")
 	cmd.Flags().BoolVar(&includeGit, "git", true, "Collect git evidence")
 	cmd.Flags().BoolVar(&includeCanaries, "canary", true, "Run HTTP canary checks from the manifest")
 	cmd.Flags().BoolVar(&includeEnv, "env", true, "Include a redacted environment hash")

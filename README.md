@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">driftcheck</h1>
   <p align="center">
-    <strong>Stop agent dependency drift before it breaks your pipeline.</strong>
+    <strong>Audit the gap between what you declared and what you locked.</strong>
   </p>
   <p align="center">
     <a href="https://github.com/ratelworks/driftcheck/actions/workflows/ci.yml"><img src="https://github.com/ratelworks/driftcheck/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -16,18 +16,19 @@
 ## The Problem
 
 Your team uses AI agent tools — Codex, Claude Code, MCP servers, OpenClaw skills.
-Each tool has a version. Each version behaves differently.
+Each tool has a version declared in a manifest. Each version is pinned in a lockfile.
 
-On Monday, everything works. On Wednesday, someone updates Claude Code. On Friday, your CI pipeline breaks at 2 AM and nobody knows why.
+When someone edits the manifest without regenerating the lockfile — or regenerates the lockfile without updating the manifest — the two files silently diverge. Your CI still passes because nobody checks the gap.
 
-**The root cause?** No one tracked which versions were running, and no one verified that the versions matched what was tested.
+**driftcheck** is a declaration drift audit tool. It compares your manifest (what you declared) against your lockfile (what you pinned) and reports every inconsistency: missing entries, stale entries, version mismatches, and digest changes.
 
-This is the same problem `package-lock.json` solved for npm, and `Cargo.lock` solved for Rust.
-**driftcheck** solves it for AI agent dependencies.
+This is the same problem `package-lock.json` solved for npm and `Cargo.lock` solved for Rust — but for AI agent dependency declarations.
+
+> **What driftcheck does NOT do:** Runtime detection is not in scope. driftcheck audits what you declared, not what is installed. It cannot verify that the versions in your manifest match what is actually running on your machine. For that, you need runtime version checks or canary health endpoints.
 
 ## What driftcheck Does
 
-You write a simple JSON file listing your agent tools and their versions. driftcheck compares it against a lockfile and tells you exactly what drifted:
+You write a JSON manifest listing your agent tools and their versions. driftcheck compares it against a lockfile and tells you exactly what drifted:
 
 ```
 $ driftcheck --manifest driftcheck.json --lock driftcheck.lock.json
@@ -37,6 +38,14 @@ $ driftcheck --manifest driftcheck.json --lock driftcheck.lock.json
   "summary": { "findings": 4, "errors": 3, "warnings": 1 },
   "findings": [
     {
+      "code": "version_mismatch",
+      "severity": "error",
+      "subject": "claude",
+      "message": "Manifest declares version 1.0.0 but lockfile has 0.9.0.",
+      "fix": "Update the manifest or regenerate the lockfile to resolve the version conflict."
+    },
+    {
+      "code": "lock_missing_target",
       "severity": "error",
       "subject": "mcp-hub",
       "message": "The lockfile does not include this target.",
@@ -102,7 +111,9 @@ Create a file called `driftcheck.json` in your project root. This is where you d
 driftcheck --manifest driftcheck.json --write-lock
 ```
 
-This creates `driftcheck.lock.json` — a snapshot of your current agent versions with SHA-256 digests. **Commit this file to git.** It's your source of truth.
+This creates `driftcheck.lock.json` — a snapshot of your current agent declarations with SHA-256 digests. **Commit this file to git.** It is your source of truth.
+
+If a lockfile already exists, `--write-lock` overwrites it with a fresh snapshot generated from the current manifest.
 
 ### Step 4: Run the audit
 
@@ -128,22 +139,23 @@ Now every PR is checked automatically. No more surprise drift.
 
 ```
 driftcheck.json (manifest)     driftcheck.lock.json (lockfile)
-┌─────────────────────┐       ┌─────────────────────┐
-│ targets:             │       │ targets:             │
-│   - codex v5.0.0     │  ──>  │   - codex v5.0.0  OK │
-│   - claude v1.0.0    │  ──>  │   - claude v0.9.0  !! │  version mismatch
-│   - mcp-hub v0.8.0   │  ──>  │   (missing)        !! │  not locked
-│ rules:               │       │   - old-bridge     !! │  stale entry
-│   - codex: allow     │       └─────────────────────┘
-│   - claude: ask      │
-│   - mcp-*: deny      │
-└─────────────────────┘
++-----------------------+       +-----------------------+
+| targets:              |       | targets:              |
+|   - codex v5.0.0      |  -->  |   - codex v5.0.0  OK  |
+|   - claude v1.0.0     |  -->  |   - claude v0.9.0  !!  |  version mismatch
+|   - mcp-hub v0.8.0    |  -->  |   (missing)        !!  |  not locked
+| rules:                |       |   - old-bridge     !!  |  stale entry
+|   - codex: allow      |       +-----------------------+
+|   - claude: ask       |
+|   - mcp-*: deny       |
++-----------------------+
 
 driftcheck detects:
-  1. Version mismatches between manifest and lockfile
-  2. Targets in manifest but missing from lockfile
+  1. Version mismatches between manifest and lockfile (same name, different version)
+  2. Targets in manifest but missing from lockfile (new, never locked)
   3. Stale targets in lockfile that are no longer in manifest
-  4. Policy violations (deny rules, ask rules needing review)
+  4. Digest changes (same name+version but different content hash)
+  5. Policy violations (deny rules, ask rules needing review)
 ```
 
 ## Policy Rules
@@ -157,6 +169,14 @@ Rules let your team control which agent tools are approved:
 | `deny` | Errors (blocks CI) | Banned or untested tools |
 
 Rules use glob patterns, so `mcp-*` matches `mcp-hub`, `mcp-proxy`, etc.
+
+### Rule Evaluation
+
+- Rules are evaluated in declaration order (first match wins)
+- Glob patterns use Go's `filepath.Match` syntax
+- Each target is matched against its name, then kind, then source — the first field that matches a rule determines the decision
+- If no rule matches a target, it is **allowed by default**
+- Invalid glob patterns are reported as errors during rule validation
 
 ## Additional Features
 
@@ -207,7 +227,7 @@ driftcheck --canary=false
 | `driftcheck` | Run audit with default paths |
 | `driftcheck --manifest FILE` | Specify manifest path (default: `driftcheck.json`) |
 | `driftcheck --lock FILE` | Specify lockfile path (default: `driftcheck.lock.json`) |
-| `driftcheck --write-lock` | Generate a new lockfile from manifest |
+| `driftcheck --write-lock` | Generate a new lockfile from manifest (overwrites existing) |
 | `driftcheck --fail-on-warning` | Exit code 1 for warnings too (strict mode) |
 | `driftcheck --git=false` | Skip git evidence collection |
 | `driftcheck --canary=false` | Skip HTTP health checks |
@@ -217,7 +237,7 @@ driftcheck --canary=false
 
 | Code | Meaning |
 |------|---------|
-| `0` | Pass — all targets match, no policy violations |
+| `0` | Pass — all declarations match, no policy violations |
 | `1` | Fail — drift detected or policy violation |
 | `2` | System error — file not found, JSON parse failure |
 

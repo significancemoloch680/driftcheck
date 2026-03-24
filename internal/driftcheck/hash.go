@@ -23,10 +23,24 @@ func hashJSON(value any) (string, error) {
 	return hashString(string(data)), nil
 }
 
+// targetIdentityKey returns a key that identifies a target by name, kind, and source
+// without including the version. Used for matching targets between manifest and lockfile
+// so that version changes are detected as explicit mismatches rather than missing targets.
+func targetIdentityKey(target Target) string {
+	return strings.Join([]string{target.Name, target.Kind, target.Source}, "|")
+}
+
+// lockedTargetIdentityKey returns a version-independent identity key for a locked target.
+func lockedTargetIdentityKey(target LockedTarget) string {
+	return strings.Join([]string{target.Name, target.Kind, target.Source}, "|")
+}
+
+// targetKey returns a full key including version, used for digest computation.
 func targetKey(target Target) string {
 	return strings.Join([]string{target.Name, target.Kind, target.Source, target.Version}, "|")
 }
 
+// lockedTargetKey returns a full key including version for a locked target.
 func lockedTargetKey(target LockedTarget) string {
 	return strings.Join([]string{target.Name, target.Kind, target.Source, target.Version}, "|")
 }

@@ -35,19 +35,26 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 	var lock Lockfile
 	lockExists := true
 	if loadedLock, _, err := loadLock(cfg.LockPath); err != nil {
-		if isMissingFileError(err) && cfg.WriteLock {
-			if err := writeJSONFile(cfg.LockPath, generatedLock); err != nil {
-				return Report{}, newSystemError("write lock failed", err)
+		if isMissingFileError(err) {
+			lockExists = false
+			if cfg.WriteLock {
+				if err := writeJSONFile(cfg.LockPath, generatedLock); err != nil {
+					return Report{}, newSystemError("write lock failed", err)
+				}
+				lock = generatedLock
 			}
-			lock = generatedLock
-			lockExists = false
-		} else if isMissingFileError(err) {
-			lockExists = false
 		} else {
 			return Report{}, classifyLoadError(cfg.LockPath, err)
 		}
 	} else {
 		lock = loadedLock
+		// --write-lock이면 기존 lockfile도 항상 덮어쓴다.
+		if cfg.WriteLock {
+			if err := writeJSONFile(cfg.LockPath, generatedLock); err != nil {
+				return Report{}, newSystemError("write lock failed", err)
+			}
+			lock = generatedLock
+		}
 	}
 
 	findings := make([]Finding, 0)
@@ -195,6 +202,8 @@ func summarizeStatus(findings []Finding, failOnWarning bool) string {
 	}
 }
 
+// validateRules checks each rule for empty patterns, invalid decisions, and
+// malformed glob patterns (filepath.Match syntax).
 func validateRules(rules []Rule) []Finding {
 	findings := make([]Finding, 0)
 	for _, rule := range rules {
@@ -207,6 +216,17 @@ func validateRules(rules []Rule) []Finding {
 				Fix:      "Set a non-empty glob pattern on the rule.",
 			})
 			continue
+		}
+
+		// glob 패턴 유효성 검증
+		if _, err := filepath.Match(rule.Pattern, "probe"); err != nil {
+			findings = append(findings, Finding{
+				Code:     "rule_invalid_glob",
+				Severity: severityError,
+				Subject:  rule.Pattern,
+				Message:  fmt.Sprintf("The glob pattern is invalid: %v", err),
+				Fix:      "Fix the glob pattern to use valid filepath.Match syntax.",
+			})
 		}
 
 		switch rule.Decision {
@@ -225,6 +245,9 @@ func validateRules(rules []Rule) []Finding {
 	return findings
 }
 
+// compareManifestToLock compares manifest targets against locked targets using
+// identity keys (name|kind|source). Version differences produce an explicit
+// "version_mismatch" finding instead of being reported as a missing target.
 func compareManifestToLock(manifest Manifest, lock Lockfile, generatedLock Lockfile, lockExists bool) []Finding {
 	findings := make([]Finding, 0)
 	if !lockExists {
@@ -251,19 +274,15 @@ func compareManifestToLock(manifest Manifest, lock Lockfile, generatedLock Lockf
 		})
 	}
 
+	// identity key (name|kind|source)로 매칭하여 version mismatch를 별도 진단한다.
 	lockMap := make(map[string]LockedTarget, len(lock.Targets))
 	for _, target := range lock.Targets {
-		lockMap[targetKey(Target{
-			Name:    target.Name,
-			Kind:    target.Kind,
-			Source:  target.Source,
-			Version: target.Version,
-		})] = target
+		lockMap[lockedTargetIdentityKey(target)] = target
 	}
 
 	for _, target := range manifest.Targets {
-		key := targetKey(target)
-		locked, ok := lockMap[key]
+		identityKey := targetIdentityKey(target)
+		locked, ok := lockMap[identityKey]
 		if !ok {
 			findings = append(findings, Finding{
 				Code:     "lock_missing_target",
@@ -271,6 +290,18 @@ func compareManifestToLock(manifest Manifest, lock Lockfile, generatedLock Lockf
 				Subject:  target.Name,
 				Message:  "The lockfile does not include this target.",
 				Fix:      "Regenerate the lockfile so the target is pinned.",
+			})
+			continue
+		}
+
+		// 같은 identity인데 version이 다르면 version_mismatch로 진단한다.
+		if locked.Version != target.Version {
+			findings = append(findings, Finding{
+				Code:     "version_mismatch",
+				Severity: severityError,
+				Subject:  target.Name,
+				Message:  fmt.Sprintf("Manifest declares version %s but lockfile has %s.", target.Version, locked.Version),
+				Fix:      "Update the manifest or regenerate the lockfile to resolve the version conflict.",
 			})
 			continue
 		}
@@ -286,13 +317,14 @@ func compareManifestToLock(manifest Manifest, lock Lockfile, generatedLock Lockf
 		}
 	}
 
+	// identity key로 역방향 검사: lock에만 있고 manifest에 없는 항목
 	manifestMap := make(map[string]Target, len(manifest.Targets))
 	for _, target := range manifest.Targets {
-		manifestMap[targetKey(target)] = target
+		manifestMap[targetIdentityKey(target)] = target
 	}
 
 	for _, locked := range lock.Targets {
-		key := lockedTargetKey(locked)
+		key := lockedTargetIdentityKey(locked)
 		if _, ok := manifestMap[key]; !ok {
 			findings = append(findings, Finding{
 				Code:     "lock_extra_target",
