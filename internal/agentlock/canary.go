@@ -51,4 +51,3 @@ func runCanary(ctx context.Context, canary Canary) (CanaryResult, error) {
 		DurationMillis: time.Since(start).Milliseconds(),
 	}, nil
 }
-

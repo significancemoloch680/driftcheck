@@ -31,4 +31,3 @@ func writeJSONFile(path string, value any) error {
 
 	return nil
 }
-

@@ -18,8 +18,9 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	cmd.SilenceUsage = true
 
 	if _, err := cmd.ExecuteC(); err != nil {
-		writeError(stdout, stderr, err, exitCodeUser)
-		return exitCodeUser
+		code := errorCode(err)
+		writeError(stdout, stderr, err, code)
+		return code
 	}
 
 	return exitCode
@@ -51,8 +52,9 @@ func newRootCommand(stdout io.Writer, stderr io.Writer, exitCode *int) *cobra.Co
 				FailOnWarning:   failOnWarning,
 			})
 			if err != nil {
-				writeError(stdout, stderr, err, exitCodeSystem)
-				*exitCode = exitCodeSystem
+				code := errorCode(err)
+				writeError(stdout, stderr, err, code)
+				*exitCode = code
 				return
 			}
 

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -65,11 +64,3 @@ func normalizeLock(lock Lockfile) Lockfile {
 	})
 	return normalized
 }
-
-func pathBase(name string) string {
-	if name == "" {
-		return ""
-	}
-	return filepath.Base(name)
-}
-

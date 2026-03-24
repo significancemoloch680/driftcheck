@@ -39,13 +39,13 @@ Example output:
   },
   "manifest_path": "examples/agentlock.json",
   "lock_path": "examples/agentlock.lock.json",
-  "manifest_hash": "b0f8f0ca53f2c0e5f6f0f2fca5b5d84b0f7d967bce18c2fd41c9cb2f6c6408b3",
-  "lock_hash": "98ebd27fbe2d3f2b70b9f0c0a62b9b9c4a2a97f6c6ce2b0fe9f4ce2d9a4b5f75",
-  "config_hash": "9cc6f4c928fdc8cfac5d4c8f2f9a0b6af5f1e6f4a7e3e2d1c9b8a7f6e5d4c3b2",
+  "manifest_hash": "651207116b5c03074e215f78d899283eef32de1d0a708e031f03a9253bd5368b",
+  "lock_hash": "3e0eaa8f728b185d5c357a01fcb51ebd1b05baf7c7d501abf0a1d8dac6294811",
+  "config_hash": "a1e8293c08a8530db69bd99eb739a5ffa938f0c1f7e6b7ace9cdd371f7ce608b",
   "env": {
-    "hash": "0cc175b9c0f1b6a831c399e269772661",
-    "total": 0,
-    "redacted": 0
+    "hash": "ad6792bda5db53ca800f6c73c7087c2ff875fed21ea7f38d766d7ec3013c4f96",
+    "total": 64,
+    "redacted": 1
   },
   "git": {
     "present": false,
@@ -57,25 +57,11 @@ Example output:
   "canaries": [],
   "findings": [
     {
-      "code": "rule_ask",
-      "severity": "warning",
-      "subject": "claude",
-      "message": "Target claude requires manual review.",
-      "fix": "Review the claude target and confirm that the ask rule is acceptable."
-    },
-    {
-      "code": "rule_deny",
-      "severity": "error",
-      "subject": "mcp-hub",
-      "message": "Target mcp-hub matches a deny rule.",
-      "fix": "Remove or rename the denied target before you refresh the lockfile."
-    },
-    {
       "code": "lock_missing_target",
       "severity": "error",
       "subject": "mcp-hub",
-      "message": "The lockfile does not include the mcp-hub target.",
-      "fix": "Run agentlock again with --write-lock to bootstrap the lockfile."
+      "message": "The lockfile does not include this target.",
+      "fix": "Regenerate the lockfile so the target is pinned."
     },
     {
       "code": "lock_extra_target",
@@ -83,6 +69,20 @@ Example output:
       "subject": "old-bridge",
       "message": "The lockfile contains an extra target that is not in the manifest.",
       "fix": "Delete the stale lock entry or regenerate the lockfile from the manifest."
+    },
+    {
+      "code": "rule_ask",
+      "severity": "warning",
+      "subject": "claude",
+      "message": "Target claude requires manual review.",
+      "fix": "Review the target and confirm that the ask rule is acceptable."
+    },
+    {
+      "code": "rule_deny",
+      "severity": "error",
+      "subject": "mcp-hub",
+      "message": "Target mcp-hub matches a deny rule.",
+      "fix": "Remove or rename the denied target before you refresh the lockfile."
     }
   ]
 }

@@ -61,4 +61,3 @@ func commandOutput(ctx context.Context, dir string, name string, args ...string)
 
 	return stdout.String(), nil
 }
-

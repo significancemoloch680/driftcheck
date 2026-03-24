@@ -55,4 +55,3 @@ func generateLock(manifest Manifest, generatedAt time.Time) (Lockfile, error) {
 		Targets:      targets,
 	}, nil
 }
-

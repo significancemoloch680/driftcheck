@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Audit compares the manifest, lockfile, git state, env snapshot, and canary results.
 func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 	if cfg.ManifestPath == "" {
 		cfg.ManifestPath = defaultManifestFile
@@ -28,7 +29,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 
 	generatedLock, err := generateLock(manifest, time.Now())
 	if err != nil {
-		return Report{}, fmt.Errorf("generate lock failed: %w", err)
+		return Report{}, newSystemError("generate lock failed", err)
 	}
 
 	var lock Lockfile
@@ -36,7 +37,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 	if loadedLock, _, err := loadLock(cfg.LockPath); err != nil {
 		if isMissingFileError(err) && cfg.WriteLock {
 			if err := writeJSONFile(cfg.LockPath, generatedLock); err != nil {
-				return Report{}, fmt.Errorf("write lock failed: %w", err)
+				return Report{}, newSystemError("write lock failed", err)
 			}
 			lock = generatedLock
 			lockExists = false
@@ -63,7 +64,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 	if cfg.IncludeGit {
 		gitInfo, err = collectGitInfo(ctx, cfg.WorkDir)
 		if err != nil {
-			return Report{}, fmt.Errorf("collect git info failed: %w", err)
+			return Report{}, newSystemError("collect git info failed", err)
 		}
 	}
 
@@ -72,7 +73,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 		for _, canary := range manifest.Canaries {
 			result, err := runCanary(ctx, canary)
 			if err != nil {
-				return Report{}, fmt.Errorf("run canary failed: %w", err)
+				return Report{}, newSystemError("run canary failed", err)
 			}
 			canaries = append(canaries, result)
 			if !result.Healthy {
@@ -89,12 +90,12 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 
 	manifestHash, err := hashJSON(normalizeManifest(manifest))
 	if err != nil {
-		return Report{}, fmt.Errorf("hash manifest failed: %w", err)
+		return Report{}, newSystemError("hash manifest failed", err)
 	}
 
 	lockHash, err := hashJSON(normalizeLock(lock))
 	if err != nil {
-		return Report{}, fmt.Errorf("hash lock failed: %w", err)
+		return Report{}, newSystemError("hash lock failed", err)
 	}
 
 	configHash, err := hashJSON(struct {
@@ -109,7 +110,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 		GitHead:      gitInfo.Head,
 	})
 	if err != nil {
-		return Report{}, fmt.Errorf("hash config failed: %w", err)
+		return Report{}, newSystemError("hash config failed", err)
 	}
 
 	summary := summarize(findings, len(manifest.Targets), len(manifest.Rules), len(canaries))
@@ -330,13 +331,7 @@ func evaluateTargetPolicies(targets []Target, rules []Rule) []Finding {
 				Fix:      "Remove or rename the denied target before you refresh the lockfile.",
 			})
 		default:
-			findings = append(findings, Finding{
-				Code:     "rule_no_match",
-				Severity: severityWarning,
-				Subject:  target.Name,
-				Message:  "The target did not match any rule.",
-				Fix:      "Add an allow, deny, or ask rule for the target.",
-			})
+			continue
 		}
 
 	}
@@ -365,7 +360,7 @@ func applyRules(target Target, rules []Rule) string {
 }
 
 func classifyLoadError(path string, err error) error {
-	return fmt.Errorf("load %s failed: %w", path, err)
+	return newUserError(fmt.Sprintf("load %s failed", path), err)
 }
 
 func isMissingFileError(err error) bool {
