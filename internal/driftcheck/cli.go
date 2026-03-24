@@ -67,7 +67,9 @@ func newRootCommand(stdout io.Writer, stderr io.Writer, exitCode *int) *cobra.Co
 			switch report.Status {
 			case statusPass:
 				*exitCode = exitCodeSuccess
-			case statusWarn, statusFail:
+			case statusWarn:
+				*exitCode = exitCodeSuccess
+			case statusFail:
 				*exitCode = exitCodeUser
 			default:
 				*exitCode = exitCodeSystem

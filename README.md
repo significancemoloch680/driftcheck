@@ -35,7 +35,14 @@ $ driftcheck --manifest driftcheck.json --lock driftcheck.lock.json
 
 {
   "status": "fail",
-  "summary": { "findings": 4, "errors": 3, "warnings": 1 },
+  "summary": {
+    "targets": 3,
+    "rules": 2,
+    "canaries": 0,
+    "findings": 4,
+    "errors": 3,
+    "warnings": 1
+  },
   "findings": [
     {
       "code": "version_mismatch",
@@ -155,7 +162,11 @@ driftcheck detects:
   2. Targets in manifest but missing from lockfile (new, never locked)
   3. Stale targets in lockfile that are no longer in manifest
   4. Digest changes (same name+version but different content hash)
-  5. Policy violations (deny rules, ask rules needing review)
+  5. Manifest/rules hash mismatches (lockfile out of date)
+  6. Missing lockfile (not yet generated)
+  7. Policy violations (deny rules, ask rules needing review)
+  8. Invalid rules (empty patterns, bad globs, unknown decisions)
+  9. Canary failures (HTTP health checks returning unexpected status)
 ```
 
 ## Policy Rules
@@ -229,6 +240,7 @@ driftcheck --canary=false
 | `driftcheck --lock FILE` | Specify lockfile path (default: `driftcheck.lock.json`) |
 | `driftcheck --write-lock` | Generate a new lockfile from manifest (overwrites existing) |
 | `driftcheck --fail-on-warning` | Exit code 1 for warnings too (strict mode) |
+| `driftcheck --workdir DIR` | Set working directory for git collection (default: `.`) |
 | `driftcheck --git=false` | Skip git evidence collection |
 | `driftcheck --canary=false` | Skip HTTP health checks |
 | `driftcheck --env=false` | Skip environment hash |
@@ -237,18 +249,38 @@ driftcheck --canary=false
 
 | Code | Meaning |
 |------|---------|
-| `0` | Pass — all declarations match, no policy violations |
-| `1` | Fail — drift detected or policy violation |
+| `0` | Pass or warn — all declarations match, or only warnings present |
+| `1` | Fail — drift detected, policy violation, or warnings with `--fail-on-warning` |
 | `2` | System error — file not found, JSON parse failure |
+
+## Finding Codes
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| `version_mismatch` | error | Manifest and lockfile declare different versions for the same target |
+| `lock_missing_target` | error | Target exists in manifest but not in lockfile |
+| `lock_extra_target` | error | Target exists in lockfile but not in manifest |
+| `lock_digest_mismatch` | error | Same target and version but content hash differs |
+| `lock_manifest_hash_mismatch` | error | Lockfile manifest hash does not match current manifest |
+| `lock_rules_hash_mismatch` | error | Lockfile rules hash does not match current rules |
+| `lock_missing` | error | Lockfile does not exist |
+| `rule_deny` | error | Target matches a deny rule |
+| `rule_ask` | warning | Target matches an ask rule (requires manual review) |
+| `rule_missing_pattern` | error | Rule has an empty pattern |
+| `rule_invalid_glob` | error | Rule pattern is not valid `filepath.Match` syntax |
+| `rule_invalid_decision` | error | Rule decision is not `allow`, `deny`, or `ask` |
+| `canary_failed` | error | Health check endpoint returned unexpected status |
 
 ## Development
 
 ```bash
 git clone https://github.com/ratelworks/driftcheck.git
 cd driftcheck
-make build    # build binary to bin/driftcheck
-make test     # go test -race ./...
-make lint     # go vet ./...
+make build       # build binary to bin/driftcheck
+make test        # go test ./...
+make test-race   # go test -race ./...
+make vet         # go vet ./...
+make lint        # golangci-lint run
 ```
 
 ## Contributing
