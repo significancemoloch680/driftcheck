@@ -293,3 +293,9 @@ make lint        # golangci-lint run
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  Developed by <a href="https://github.com/ratelworks"><strong>RATELWORKS</strong></a>
+</p>
