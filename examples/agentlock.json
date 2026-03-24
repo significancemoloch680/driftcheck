@@ -1,0 +1,45 @@
+{
+  "name": "sample-agent-stack",
+  "targets": [
+    {
+      "name": "codex",
+      "kind": "cli",
+      "source": "github.com/openai/codex",
+      "version": "5.0.0"
+    },
+    {
+      "name": "claude",
+      "kind": "cli",
+      "source": "anthropic/claude-code",
+      "version": "1.0.0"
+    },
+    {
+      "name": "mcp-hub",
+      "kind": "bridge",
+      "source": "localhost/mcp",
+      "version": "0.8.0"
+    }
+  ],
+  "rules": [
+    {
+      "pattern": "codex",
+      "decision": "allow"
+    },
+    {
+      "pattern": "claude",
+      "decision": "ask"
+    },
+    {
+      "pattern": "mcp-*",
+      "decision": "deny"
+    }
+  ],
+  "canaries": [
+    {
+      "name": "local-health",
+      "url": "http://127.0.0.1:65535/health",
+      "expected_status": 200,
+      "timeout_millis": 100
+    }
+  ]
+}

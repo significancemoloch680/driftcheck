@@ -1,0 +1,28 @@
+{
+  "manifest_hash": "2dce2f8d793f4f5c8df4f8d4dd6b1d1b4d3b4f2a3c6d0e8c8f2a5d8d7c7c1b2a",
+  "rules_hash": "d4a0f48d2d1a8e6d0f0c2c4b8e5d4f3c2b1a0d9c8f7e6d5c4b3a291817161514",
+  "generated_at": "2026-03-24T00:00:00Z",
+  "targets": [
+    {
+      "name": "codex",
+      "kind": "cli",
+      "source": "github.com/openai/codex",
+      "version": "5.0.0",
+      "digest": "f7a6c34c6d7d1b3d4f8b8f1b0f0e1d2c3a4b5c6d7e8f90123456789abcdef012"
+    },
+    {
+      "name": "claude",
+      "kind": "cli",
+      "source": "anthropic/claude-code",
+      "version": "0.9.0",
+      "digest": "a8b7c6d5e4f30123456789abcdef0123456789abcdef0123456789abcdef0123"
+    },
+    {
+      "name": "old-bridge",
+      "kind": "bridge",
+      "source": "localhost/old",
+      "version": "1.0.0",
+      "digest": "b1c2d3e4f50123456789abcdef0123456789abcdef0123456789abcdef012345"
+    }
+  ]
+}

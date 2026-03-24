@@ -1,0 +1,16 @@
+# Binaries and build output
+bin/
+dist/
+*.exe
+*.test
+*.out
+coverage.out
+.coverprofile
+
+# Go workspace and module cache hints
+pkg/
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
