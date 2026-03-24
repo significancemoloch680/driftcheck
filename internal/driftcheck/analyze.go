@@ -1,4 +1,4 @@
-package agentlock
+package driftcheck
 
 import (
 	"context"
@@ -140,7 +140,7 @@ func Audit(ctx context.Context, cfg AuditConfig) (Report, error) {
 			Severity: severityError,
 			Subject:  filepath.Base(cfg.LockPath),
 			Message:  "The lockfile does not exist.",
-			Fix:      "Run agentlock with --write-lock to bootstrap the lockfile from the manifest.",
+			Fix:      "Run driftcheck with --write-lock to bootstrap the lockfile from the manifest.",
 		})
 		report.Summary = summarize(report.Findings, len(manifest.Targets), len(manifest.Rules), len(canaries))
 		report.Status = summarizeStatus(report.Findings, cfg.FailOnWarning)

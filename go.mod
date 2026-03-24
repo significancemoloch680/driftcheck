@@ -1,4 +1,4 @@
-module github.com/ratelworks/agentlock
+module github.com/ratelworks/driftcheck
 
 go 1.25.0
 

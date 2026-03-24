@@ -1,13 +1,13 @@
 <p align="center">
-  <h1 align="center">agentlock</h1>
+  <h1 align="center">driftcheck</h1>
   <p align="center">
     <strong>Stop agent dependency drift before it breaks your pipeline.</strong>
   </p>
   <p align="center">
-    <a href="https://github.com/ratelworks/agentlock/actions/workflows/ci.yml"><img src="https://github.com/ratelworks/agentlock/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-    <a href="https://github.com/ratelworks/agentlock/releases/latest"><img src="https://img.shields.io/github/v/release/ratelworks/agentlock" alt="Release"></a>
+    <a href="https://github.com/ratelworks/driftcheck/actions/workflows/ci.yml"><img src="https://github.com/ratelworks/driftcheck/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://github.com/ratelworks/driftcheck/releases/latest"><img src="https://img.shields.io/github/v/release/ratelworks/driftcheck" alt="Release"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
-    <a href="https://pkg.go.dev/github.com/ratelworks/agentlock"><img src="https://pkg.go.dev/badge/github.com/ratelworks/agentlock.svg" alt="Go Reference"></a>
+    <a href="https://pkg.go.dev/github.com/ratelworks/driftcheck"><img src="https://pkg.go.dev/badge/github.com/ratelworks/driftcheck.svg" alt="Go Reference"></a>
   </p>
 </p>
 
@@ -23,14 +23,14 @@ On Monday, everything works. On Wednesday, someone updates Claude Code. On Frida
 **The root cause?** No one tracked which versions were running, and no one verified that the versions matched what was tested.
 
 This is the same problem `package-lock.json` solved for npm, and `Cargo.lock` solved for Rust.
-**agentlock** solves it for AI agent dependencies.
+**driftcheck** solves it for AI agent dependencies.
 
-## What agentlock Does
+## What driftcheck Does
 
-You write a simple JSON file listing your agent tools and their versions. agentlock compares it against a lockfile and tells you exactly what drifted:
+You write a simple JSON file listing your agent tools and their versions. driftcheck compares it against a lockfile and tells you exactly what drifted:
 
 ```
-$ agentlock --manifest agentlock.json --lock agentlock.lock.json
+$ driftcheck --manifest driftcheck.json --lock driftcheck.lock.json
 
 {
   "status": "fail",
@@ -53,12 +53,12 @@ Every finding tells you **what went wrong** and **how to fix it**. No guessing.
 ### Step 1: Install
 
 ```bash
-go install github.com/ratelworks/agentlock@latest
+go install github.com/ratelworks/driftcheck@latest
 ```
 
 ### Step 2: Create a manifest
 
-Create a file called `agentlock.json` in your project root. This is where you declare the agent tools your project depends on:
+Create a file called `driftcheck.json` in your project root. This is where you declare the agent tools your project depends on:
 
 ```json
 {
@@ -99,15 +99,15 @@ Create a file called `agentlock.json` in your project root. This is where you de
 ### Step 3: Generate a lockfile
 
 ```bash
-agentlock --manifest agentlock.json --write-lock
+driftcheck --manifest driftcheck.json --write-lock
 ```
 
-This creates `agentlock.lock.json` — a snapshot of your current agent versions with SHA-256 digests. **Commit this file to git.** It's your source of truth.
+This creates `driftcheck.lock.json` — a snapshot of your current agent versions with SHA-256 digests. **Commit this file to git.** It's your source of truth.
 
 ### Step 4: Run the audit
 
 ```bash
-agentlock --manifest agentlock.json --lock agentlock.lock.json
+driftcheck --manifest driftcheck.json --lock driftcheck.lock.json
 ```
 
 If everything matches, you get `"status": "pass"`. If something drifted, you get a detailed report with fixes.
@@ -118,8 +118,8 @@ If everything matches, you get `"status": "pass"`. If something drifted, you get
 # .github/workflows/ci.yml
 - name: Audit agent dependencies
   run: |
-    go install github.com/ratelworks/agentlock@latest
-    agentlock --manifest agentlock.json --lock agentlock.lock.json --fail-on-warning
+    go install github.com/ratelworks/driftcheck@latest
+    driftcheck --manifest driftcheck.json --lock driftcheck.lock.json --fail-on-warning
 ```
 
 Now every PR is checked automatically. No more surprise drift.
@@ -127,7 +127,7 @@ Now every PR is checked automatically. No more surprise drift.
 ## How It Works
 
 ```
-agentlock.json (manifest)     agentlock.lock.json (lockfile)
+driftcheck.json (manifest)     driftcheck.lock.json (lockfile)
 ┌─────────────────────┐       ┌─────────────────────┐
 │ targets:             │       │ targets:             │
 │   - codex v5.0.0     │  ──>  │   - codex v5.0.0  OK │
@@ -139,7 +139,7 @@ agentlock.json (manifest)     agentlock.lock.json (lockfile)
 │   - mcp-*: deny      │
 └─────────────────────┘
 
-agentlock detects:
+driftcheck detects:
   1. Version mismatches between manifest and lockfile
   2. Targets in manifest but missing from lockfile
   3. Stale targets in lockfile that are no longer in manifest
@@ -162,11 +162,11 @@ Rules use glob patterns, so `mcp-*` matches `mcp-hub`, `mcp-proxy`, etc.
 
 ### Environment Hash
 
-agentlock captures a SHA-256 hash of your environment variables (with secrets automatically redacted). This helps answer "was the environment the same when it worked?"
+driftcheck captures a SHA-256 hash of your environment variables (with secrets automatically redacted). This helps answer "was the environment the same when it worked?"
 
 ```bash
 # Included by default. To skip:
-agentlock --env=false
+driftcheck --env=false
 ```
 
 ### Git Evidence
@@ -175,7 +175,7 @@ Records the current HEAD commit and dirty state, so you can trace exactly which 
 
 ```bash
 # Included by default. To skip:
-agentlock --git=false
+driftcheck --git=false
 ```
 
 ### Health Canaries
@@ -197,21 +197,21 @@ Define HTTP endpoints in your manifest to check if services are actually running
 
 ```bash
 # Included by default. To skip:
-agentlock --canary=false
+driftcheck --canary=false
 ```
 
 ## CLI Reference
 
 | Command | Description |
 |---------|-------------|
-| `agentlock` | Run audit with default paths |
-| `agentlock --manifest FILE` | Specify manifest path (default: `agentlock.json`) |
-| `agentlock --lock FILE` | Specify lockfile path (default: `agentlock.lock.json`) |
-| `agentlock --write-lock` | Generate a new lockfile from manifest |
-| `agentlock --fail-on-warning` | Exit code 1 for warnings too (strict mode) |
-| `agentlock --git=false` | Skip git evidence collection |
-| `agentlock --canary=false` | Skip HTTP health checks |
-| `agentlock --env=false` | Skip environment hash |
+| `driftcheck` | Run audit with default paths |
+| `driftcheck --manifest FILE` | Specify manifest path (default: `driftcheck.json`) |
+| `driftcheck --lock FILE` | Specify lockfile path (default: `driftcheck.lock.json`) |
+| `driftcheck --write-lock` | Generate a new lockfile from manifest |
+| `driftcheck --fail-on-warning` | Exit code 1 for warnings too (strict mode) |
+| `driftcheck --git=false` | Skip git evidence collection |
+| `driftcheck --canary=false` | Skip HTTP health checks |
+| `driftcheck --env=false` | Skip environment hash |
 
 ### Exit Codes
 
@@ -224,9 +224,9 @@ agentlock --canary=false
 ## Development
 
 ```bash
-git clone https://github.com/ratelworks/agentlock.git
-cd agentlock
-make build    # build binary to bin/agentlock
+git clone https://github.com/ratelworks/driftcheck.git
+cd driftcheck
+make build    # build binary to bin/driftcheck
 make test     # go test -race ./...
 make lint     # go vet ./...
 ```

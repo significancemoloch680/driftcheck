@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/ratelworks/agentlock/internal/agentlock"
+	"github.com/ratelworks/driftcheck/internal/driftcheck"
 )
 
 func main() {
-	os.Exit(agentlock.Execute(os.Args[1:], os.Stdout, os.Stderr))
+	os.Exit(driftcheck.Execute(os.Args[1:], os.Stdout, os.Stderr))
 }

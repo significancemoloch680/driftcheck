@@ -1,4 +1,4 @@
-package agentlock
+package driftcheck
 
 import (
 	"encoding/json"

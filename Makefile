@@ -1,4 +1,4 @@
-BINARY_NAME := agentlock
+BINARY_NAME := driftcheck
 
 .PHONY: build test test-race vet lint clean
 

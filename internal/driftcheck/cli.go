@@ -1,4 +1,4 @@
-package agentlock
+package driftcheck
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Execute runs the agentlock CLI and returns an exit code.
+// Execute runs the driftcheck CLI and returns an exit code.
 func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	exitCode := exitCodeSuccess
 	cmd := newRootCommand(stdout, stderr, &exitCode)
@@ -37,7 +37,7 @@ func newRootCommand(stdout io.Writer, stderr io.Writer, exitCode *int) *cobra.Co
 	var failOnWarning bool
 
 	cmd := &cobra.Command{
-		Use:   "agentlock",
+		Use:   "driftcheck",
 		Short: "Audit agent manifests against a lockfile",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {

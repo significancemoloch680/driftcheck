@@ -1,8 +1,8 @@
-package agentlock
+package driftcheck
 
 const (
-	defaultManifestFile = "agentlock.json"
-	defaultLockFile     = "agentlock.lock.json"
+	defaultManifestFile = "driftcheck.json"
+	defaultLockFile     = "driftcheck.lock.json"
 
 	decisionAllow = "allow"
 	decisionDeny  = "deny"
