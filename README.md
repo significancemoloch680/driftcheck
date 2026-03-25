@@ -297,5 +297,5 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 <p align="center">
-  Developed by <a href="https://github.com/ratelworks"><strong>RATELWORKS</strong></a>
+  Developed by <strong>RATELWORKS</strong>
 </p>
